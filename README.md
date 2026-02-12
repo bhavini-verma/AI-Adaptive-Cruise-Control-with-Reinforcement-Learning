@@ -1,87 +1,100 @@
-# AI-driven Adaptive Cruise Control (ACC) Reinforcement Learning (RL)
+# AI-Adaptive-Cruise-Control-with-Reinforcement-Learning
 
-> Real-time embedded reinforcement learning deployment using TensorFlow Lite Micro under memory and power constraints.
-
----
-
-## 📌 Project Objective
-
-Design and deploy a low-latency Adaptive Cruise Control (ACC) system on a resource-constrained microcontroller (ESP32) capable of maintaining safe following distance using on-device reinforcement learning inference.
-
-The system eliminates cloud dependency and executes the policy entirely on embedded hardware.
+Reinforcement Learning–based Adaptive Cruise Control (ACC) pipeline including model evaluation, ONNX export, and TensorFlow policy reconstruction.
 
 ---
 
-## 🏗 System Architecture
+## Project Overview
 
-```
-HC-SR04 Sensor
-      ↓
-Distance Acquisition
-      ↓
-State Normalization
-      ↓
-TensorFlow Lite Micro Inference (INT8 PPO Policy)
-      ↓
-Discrete Action Selection
-      ↓
-PWM Signal Generation
-      ↓
-L298N Motor Driver
-      ↓
-DC Motor Speed Adjustment
-```
+This project demonstrates a Proximal Policy Optimization (PPO)–based Adaptive Cruise Control (ACC) framework designed for embedded deployment scenarios.
 
-The control loop runs continuously, performing sensing → inference → actuation in real time.
+The repository includes:
+
+* Policy evaluation pipeline
+* PyTorch → ONNX export
+* PyTorch → TensorFlow weight conversion
+* Custom ACC environment definition
+
+Pretrained artifacts are not included in this repository.
 
 ---
 
-## 🧠 Reinforcement Learning Model
+## Reinforcement Learning Model
 
 * **Algorithm:** Proximal Policy Optimization (PPO)
-* **Deployment Format:** TensorFlow Lite Micro
-* **Quantization:** INT8
-* **Original Model Size:** 1.8 MB
-* **Deployed Model Size:** 230 KB
-* **Inference Latency:** ~25 ms (on ESP32)
+* **Policy Type:** MLP Policy
+* **Input Dimension:** 3
+* **Action Space:** 4 discrete actions
+* **Frameworks Used:** Stable-Baselines3, PyTorch, TensorFlow
 
-The model outputs discrete throttle actions mapped to PWM duty cycles for motor control.
-
----
-
-## 🔧 Hardware Components
-
-| Component                 | Role                                   |
-| ------------------------- | -------------------------------------- |
-| ESP32 DevKit              | Edge inference + control logic         |
-| HC-SR04 Ultrasonic Sensor | Distance measurement (10–100 cm range) |
-| L298N Motor Driver        | PWM-based motor actuation              |
-| DC Motor                  | Vehicle velocity simulation            |
+The TensorFlow model replicates the PPO policy architecture using two hidden layers (64 units each) followed by a 4-output action layer.
 
 ---
 
-## ⚙️ Embedded Implementation
+## Model Conversion Pipeline
 
-* Firmware written in **C++**
-* Tensor arena allocated statically for TFLite Micro
-* Continuous polling-based control loop
-* Distance normalization before inference
-* Discrete action → PWM mapping logic
-* No external accelerator or cloud compute
+### Evaluation
 
-The system operates within microcontroller memory constraints while maintaining stable control behavior.
+Loads a trained PPO model and runs it for 100 episodes:
+
+```bash
+python evaluation.py
+```
+
+Requires:
+
+* `ppo_acc_model_final.zip`
 
 ---
 
-## 📊 Performance Metrics
+### ONNX Export
 
-| Metric                    | Value  |
-| ------------------------- | ------ |
-| Decision Accuracy         | 94.3%  |
-| Dynamic Stability         | 96.2%  |
-| Overall System Efficiency | 95.4%  |
-| Inference Latency         | ~25 ms |
-| Runtime Power Consumption | ~2.8 W |
+Exports the trained PyTorch policy to ONNX format:
+
+```bash
+python export_onnx.py
+```
+
+Output:
+
+```
+ppo_policy.onnx
+```
+
+Requires:
+
+* `ppo_acc_model_final.zip`
+
+---
+
+### TensorFlow Conversion
+
+Reconstructs the PPO policy architecture in TensorFlow and loads weights from a NumPy archive:
+
+```bash
+python tf_conversion.py
+```
+
+Output:
+
+```
+ppo_tf_saved_model/
+```
+
+Requires:
+
+* `ppo_weights.npz`
+
+---
+
+## Custom Environment
+
+`acc_env.py` defines a custom Gymnasium environment:
+
+* Observation space: 3-dimensional
+* Action space: 4 discrete actions
+
+This environment is required for model evaluation.
 
 ---
 
@@ -89,8 +102,47 @@ The system operates within microcontroller memory constraints while maintaining 
 
 ```
 .
-├── main.cpp        # Control loop + sensor + inference integration
-├── model_data.h    # Quantized TFLite Micro model (C array)
-├── report.pdf      # Detailed project documentation
-└── README.md
+├── tf_conversion.py
+├── evaluation.py
+├── export_onnx.py
+├── acc_env.py
+├── requirements.txt
+├── docs/
+│   ├── Problem_Statement.pdf
+│   └── Report.pdf
+└── images/
 ```
+
+---
+
+## Dependencies
+
+Install required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Model Artifacts
+
+The following files are not included:
+
+* `ppo_acc_model_final.zip`
+* `ppo_weights.npz`
+
+These are required to run evaluation and conversion scripts.
+
+---
+
+##  Technical Scope
+
+This repository focuses on:
+
+* Reinforcement learning policy evaluation
+* Cross-framework model portability (PyTorch → ONNX → TensorFlow)
+* Structural alignment of policy architecture across frameworks
+* Preparation for embedded deployment workflows
+
+---
